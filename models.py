@@ -7,6 +7,7 @@ import enum
 
 class Contact(Base):
     __tablename__ = "contacts"
+    __table_args__ = {'extend_existing': True}
     id = Column(Integer, primary_key=True, index=True)
     first_name = Column(String, index=True)
     last_name = Column(String, index=True)
@@ -27,6 +28,7 @@ class Role(enum.Enum):
 
 class User(Base):
     __tablename__ = "users"
+    __table_args__ = {'extend_existing': True}
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String(150))
     email = Column(String(150), nullable=False, unique=True)

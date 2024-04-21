@@ -20,8 +20,7 @@ conf = ConnectionConfig(
     TEMPLATE_FOLDER=Path(__file__).parent / 'templates',
 )
 
-
-async def send_email(email: EmailStr, username: str, host: str):
+def send_email(email: EmailStr, username: str, host: str):
     try:
         token_verification = auth_services.Auth.create_email_token({"sub": email})
         message = MessageSchema(
@@ -32,7 +31,7 @@ async def send_email(email: EmailStr, username: str, host: str):
         )
 
         fm = FastMail(conf)
-        await fm.send_message(message, template_name="email_template.html")
+        fm.send_message(message, template_name="email_template.html")
     except ConnectionErrors as err:
         print(err)
 

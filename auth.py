@@ -4,12 +4,12 @@ from fastapi.security import OAuth2PasswordRequestForm, HTTPAuthorizationCredent
 from fastapi_limiter.depends import RateLimiter
 from sqlalchemy.orm import Session
 from fastapi.responses import FileResponse
-import auth_services
+from auth_services import Auth
 import schemas
 import users
 from db import get_db
 from send_email import send_email
-import models
+from models import User
 import pickle
 import cloudinary
 import cloudinary.uploader
@@ -33,7 +33,7 @@ def signup(body: schemas.UserSchema, bt: BackgroundTasks, request: Request, db: 
             detail="User with this email already exists",
 
         )
-    body.password = auth_services.Auth.get_password_hash(body.password)
+    body.password = Auth.get_password_hash(body.password)
     db_user = users.create_user(body, db)
     bt.add_task(send_email, db_user.email, db_user.username, str(request.base_url))
     return db_user
@@ -53,14 +53,14 @@ def login(body: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get
             detail="Email not confirmed",
         )
 
-    if not auth_services.Auth.verify_password(body.password, db_user.password):
+    if not Auth.verify_password(body.password, db_user.password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",
         )
 
-    access_token = auth_services.Auth.create_access_token(data={'sub': db_user.email})
-    refresh_token = auth_services.Auth.create_refresh_token(data={'sub': db_user.email})
+    access_token = Auth.create_access_token(data={'sub': db_user.email})
+    refresh_token = Auth.create_refresh_token(data={'sub': db_user.email})
     users.update_token(db_user, refresh_token, db)
     return {"access_token": access_token, "refresh_token": refresh_token, "token_type": "bearer"}
 
@@ -69,20 +69,20 @@ def login(body: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get
 def refresh_token(credentials: HTTPAuthorizationCredentials = Security(get_refresh_token),
                   db: Session = Depends(get_db)):
     token = credentials.credentials
-    email = auth_services.Auth.decode_refresh_token()
+    email = Auth.decode_refresh_token()
     user = users.get_user_by_email(email, db)
     if user.refresh_token != token:
         users.update_token(user, None, db)
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token")
-    access_token = auth_services.Auth.create_access_token(data={'sub': email})
-    refresh_token = auth_services.Auth.create_refresh_token(data={'sub': email})
+    access_token = Auth.create_access_token(data={'sub': email})
+    refresh_token = Auth.create_refresh_token(data={'sub': email})
     users.update_token(user, refresh_token, db)
     return {"access_token": access_token, "refresh_token": refresh_token, "token_type": "bearer"}
 
 
 @router.get('/confirmed_email/{token}')
 def confirmed_email(token: str, db: Session = Depends(get_db)):
-    email = auth_services.Auth.get_email_from_token(token)
+    email = Auth.get_email_from_token(token)
     user = users.get_user_by_email(email, db)
     if user is None:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Verification error")
@@ -113,7 +113,7 @@ def request_email(username: str, response: Response, db: Session = Depends(get_d
 
 @router.get('/me', response_model=schemas.UserResponse, dependencies=[Depends(RateLimiter(times=1, seconds=20))],
 )
-def get_current_user(user: models.User = Depends(auth_services.Auth.get_current_user)):
+def get_current_user(user: User = Depends(Auth.get_current_user)):
     return user
 
 @router.patch(
@@ -124,7 +124,7 @@ def get_current_user(user: models.User = Depends(auth_services.Auth.get_current_
 
 def get_current_user(
     file: UploadFile = File(),
-    user: models.User = Depends(auth_services.Auth.get_current_user),
+    user: User = Depends(Auth.get_current_user),
     db: Session = Depends(get_db),
 ):
     public_id = f"HW12/{user.email}"
@@ -134,6 +134,6 @@ def get_current_user(
         width=250, height=250, crop="fill", version=res.get("version")
     )
     user = users.update_avatar_url(user.email, res_url, db)
-    auth_services.Auth.cache.set(user.email, pickle.dumps(user))
-    auth_services.Auth.cache.expire(user.email, 300)
+    Auth.cache.set(user.email, pickle.dumps(user))
+    Auth.cache.expire(user.email, 300)
     return user

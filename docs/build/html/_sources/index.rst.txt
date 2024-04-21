@@ -18,7 +18,7 @@ REST API main
   :show-inheritance:
 
 
-REST API repository CRUD
+REST API CRUD
 =========================
 .. automodule:: crud
   :members:
@@ -27,7 +27,7 @@ REST API repository CRUD
 
 
 
-REST API repository Users
+REST API Users
 =========================
 .. automodule:: users
   :members:
@@ -35,16 +35,7 @@ REST API repository Users
   :show-inheritance:
 
 
-
-REST API routes Users
-=========================
-.. automodule:: users
-  :members:
-  :undoc-members:
-  :show-inheritance:
-
-
-REST API routes Auth
+REST API Auth
 =========================
 .. automodule:: auth
   :members:
@@ -52,7 +43,7 @@ REST API routes Auth
   :show-inheritance:
 
 
-REST API service Auth_S
+REST API Auth_Services
 =========================
 .. automodule:: auth_services
   :members:
@@ -60,7 +51,7 @@ REST API service Auth_S
   :show-inheritance:
 
 
-REST API service Email
+REST API Email
 =========================
 .. automodule:: email
   :members:
