@@ -42,17 +42,24 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+#
+# banned_ips = [ip_address("192.168.1.1"), ip_address("192.168.1.2")]
 
-banned_ips = [ip_address("192.168.1.1"), ip_address("192.168.1.2")]
 
-
-@app.middleware("http")
-def ban_ips(request: Request, call_next: Callable):
-    ip = ip_address(request.client.host)
-    if ip in banned_ips:
-        return JSONResponse(status_code=status.HTTP_403_FORBIDDEN, content={"detail": "You are banned"})
-    response = call_next(request)
-    return response
+# @app.middleware("http")
+# async def ban_ips(request: Request, call_next):
+#     try:
+#         # Разделить значение request.client.host и взять первую часть
+#         ip = ip_address(request.client.host.split(',')[0])
+#     except ValueError:
+#         # Если не удалось преобразовать в действительный IP-адрес, возникла ошибка
+#         raise HTTPException(status_code=400, detail="Invalid client IP address")
+#
+#     if ip in banned_ips:
+#         return JSONResponse(status_code=status.HTTP_403_FORBIDDEN, content={"detail": "You are banned"})
+#
+#     response = await call_next(request)
+#     return response
 
 @app.on_event("startup")
 def startup():
